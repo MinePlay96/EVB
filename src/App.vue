@@ -1,12 +1,29 @@
 <template>
   <div id="app">
-    <div id="nav">
-      <router-link to="/">Home</router-link> |
-      <router-link to="/about">About</router-link>
-    </div>
-    <router-view/>
+    <TitleBar :title="app.getName() + ' /' + this.$router.currentRoute.name"></TitleBar>
+    <main>
+      <div class="container">
+          <MainMenu/>
+          <router-view/>
+      </div>
+    </main>
   </div>
 </template>
+
+<script>
+    import TitleBar from "./components/TitleBar";
+    import MainMenu from "./components/MainMenu";
+    import {remote} from "electron";
+
+    export default {
+        data: function() {
+          return {
+            app: remote.app
+          }
+        },
+        components: {MainMenu, TitleBar},
+    }
+</script>
 
 <style>
 #app {
@@ -14,7 +31,10 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
+  display: flex;
+  flex-flow: column;
   color: #2c3e50;
+  height: 100%;
 }
 #nav {
   padding: 30px;
@@ -27,5 +47,13 @@
 
 #nav a.router-link-exact-active {
   color: #42b983;
+}
+
+html, body {
+  height: 100%;
+}
+
+main {
+  overflow: auto;
 }
 </style>
