@@ -1,7 +1,10 @@
 <template>
     <div>
         <b-navbar type="dark" variant="dark">
-            <b-navbar-brand small>{{ title }}</b-navbar-brand>
+            <b-navbar-brand>
+                <img src="favicon.ico" class="d-inline-block align-top" alt="Kitten">
+                {{ title }}
+            </b-navbar-brand>
 
             <!-- Right aligned nav items -->
             <b-navbar-nav class="ml-auto">
@@ -24,17 +27,32 @@
                 </b-nav-item>
             </b-navbar-nav>
         </b-navbar>
+        <ApplicationMenu :applicationMenu="ApplicationMenu" v-on:MenuAction="windowAction"></ApplicationMenu>
+
     </div>
 </template>
 
 <script>
+
+    import ApplicationMenu from './ApplicationMenu';
+
     const {remote} = require('electron');
     const BrowserWindow = remote.getCurrentWindow();
+    const Menu = remote.Menu;
     export default {
         name: "TitleBar",
         props: ['title'],
+        data: function() {
+            return {
+                ApplicationMenu: Menu.getApplicationMenu()
+            }
+        },
+        components: {
+            ApplicationMenu
+        },
         methods: {
             windowAction(method) {
+                console.log(method)
                 switch (method) {
                     case 'toggleMaximize':
                         if (BrowserWindow.isMaximized()) {
