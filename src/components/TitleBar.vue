@@ -1,10 +1,20 @@
 <template>
-    <div>
-        <b-navbar type="dark" variant="dark">
+    <div class="TitleBar">
+        <b-navbar type="dark" variant="dark" tag="div">
             <b-navbar-brand>
                 <img src="favicon.ico" class="d-inline-block align-top" alt="Kitten">
-                {{ title }}
             </b-navbar-brand>
+
+            <!--
+            <b-navbar-nav>        
+                <MenuDropDown
+                nav
+                v-for="( menu, key ) in ApplicationMenu.items" 
+                :key="key" 
+                :menu="menu">
+                </MenuDropDown>
+            </b-navbar-nav>
+            -->
 
             <!-- Right aligned nav items -->
             <b-navbar-nav class="ml-auto">
@@ -27,18 +37,26 @@
                 </b-nav-item>
             </b-navbar-nav>
         </b-navbar>
-        <ApplicationMenu :applicationMenu="ApplicationMenu" v-on:MenuAction="windowAction"></ApplicationMenu>
-
     </div>
 </template>
 
 <script>
 
-    import ApplicationMenu from './ApplicationMenu';
+    let keymap = [];
+
+    document.onkeypress = function(event) {
+        keymap.push(event.key);
+        if (keymap.join('') === 'test') {
+            document.getElementsByClassName('navbar')[0].style.backgroundImage = "url(http://giphygifs.s3.amazonaws.com/media/sIIhZliB2McAo/giphy.gif)";
+        }
+    }
+
+    import MenuDropDown from './MenuDropDown';
 
     const {remote} = require('electron');
     const BrowserWindow = remote.getCurrentWindow();
     const Menu = remote.Menu;
+
     export default {
         name: "TitleBar",
         props: ['title'],
@@ -48,7 +66,7 @@
             }
         },
         components: {
-            ApplicationMenu
+            MenuDropDown
         },
         methods: {
             windowAction(method) {
@@ -73,22 +91,69 @@
     }
 </script>
 
-<style scoped>
+<style>
+
     .navbar {
-        -webkit-app-region: drag;
+        background-position: center;
+        background-size: contain;
     }
 
-    .navbar-nav {
+    .TitleBar {
+        font-size: 0.8rem
+    }
+
+    .TitleBar .dropdown-menu {
+        margin: .25rem 0;
+    }
+
+    .TitleBar .navbar {
+        -webkit-app-region: drag;
+        height: 1.8rem;
+        padding: 0;
+    }
+
+    .TitleBar .navbar-brand, .TitleBar img {
+        height: 100%;
+    }
+    
+    .navbar-nav > li > a {
+        padding: 0;
+    }
+
+    .TitleBar .navbar-nav {
         -webkit-app-region: no-drag;
     }
 
-    .nav-item a {
+    .TitleBar .nav-item a {
         -webkit-user-drag: none;
         user-select: none;
     }
 
-    .nav-item:hover {
+    .TitleBar .nav-item:hover {
         background-color: rgba(0, 0, 0, 0.1);
+    }
+
+    .sub-menu > button,
+    .sub-menu > button:active,
+    .sub-menu > button:hover {    
+        border: none;
+        background: transparent;
+        padding: unset;
+        color: inherit;
+        text-align: left;
+        font: inherit;
+    }
+
+    .sub-menu > .dropdown-menu {
+        top: -13px;
+    } 
+
+    .sub-menu:hover > ul {
+        display: block;
+    }
+
+    .navbar-brand {
+        padding-left: 0.5rem;
     }
 
 </style>

@@ -1,21 +1,32 @@
 'use strict'
 
-import { app, protocol, BrowserWindow, Menu, Tray } from 'electron'
-import {
-  createProtocol,
-  installVueDevtools
-} from 'vue-cli-plugin-electron-builder/lib'
-import path from 'path'
-const isDevelopment = process.env.NODE_ENV !== 'production'
+// iport used components
+// ---------------------------------------------------------------------------------------------------------------//
+import { app, BrowserWindow, Menu, protocol, Tray, shell, ipcMain } from 'electron';
+import path from 'path';
+import { createProtocol } from 'vue-cli-plugin-electron-builder/lib';
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
+// ---------------------------------------------------------------------------------------------------------------//
+const isDevelopment = process.env.NODE_ENV !== 'production'
 let win
 let tray = null;
 let trayImag = path.join(__static, 'favicon.ico')
 
-// Scheme must be registered before the app is ready
-protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: { secure: true, standard: true } }])
+const clientProtocol = {}
+clientProtocol.list = {};
+// register global functions
+// ---------------------------------------------------------------------------------------------------------------//
+
+clientProtocol.on = function (event, callback) {
+  this.list[event] = callback
+}
+
+clientProtocol.call = function (event, data) {
+  console.log(this.list, event, data);
+  this.list[event](data)
+}
 
 function createWindow() {
   // Create the browser window.
@@ -24,7 +35,7 @@ function createWindow() {
     height: 600,
     frame: false,
     icon: trayImag,
-    show: false,
+    show: false, 
     webPreferences: {
       nodeIntegration: true
     }
@@ -50,7 +61,7 @@ function createWindow() {
 }
 
 function createTray() {
-
+  // create tray menue template
   const contextMenu = Menu.buildFromTemplate([
     {
       label: 'close',
@@ -60,12 +71,12 @@ function createTray() {
     }
   ]);
 
+  // create tray with image tooltip and menue
   tray = new Tray(trayImag);
-
   tray.setToolTip(app.getName());
-
   tray.setContextMenu(contextMenu);
 
+  // add click event to tray
   tray.on('click', () => {
     if (win === null) {
       createWindow();
@@ -75,41 +86,64 @@ function createTray() {
   });
 }
 
-// Quit when all windows are closed.
-app.on('window-all-closed', (event) => {
-  // keeps Application allive after every window has closed
-  event.preventDefault()
-})
+function protocolLogic(argv = process.argv) {
+  let matches = argv[argv.length-1].match(/(\w+)(?::\/\/)(.+)/)
+  if (!matches) {
+    return
+  }
+  let calledProtocol = {protocol: matches[1], url: matches[2]}
+  clientProtocol.call(calledProtocol.protocol, calledProtocol.url)
+}
 
-app.on('activate', () => {
-  // On macOS it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
-  if (win === null) {
+// make app logic
+// ---------------------------------------------------------------------------------------------------------------//
+
+// get if this is the first instance
+const firstInstance = app.requestSingleInstanceLock()
+
+if (!firstInstance) {
+  // if this instent is the first instance close app imediatly
+  app.quit()
+} else {
+  // if this is the first instance 
+
+  // register nessessary things
+  // Scheme must be registered before the app is ready
+  protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: { secure: true, standard: true } }])
+
+  // register app events 
+  // if it recives data from a second instance 
+  app.on('second-instance', function (event, commandLine, workingDirectory) {
+    if (win === null) {
+      createWindow();
+    } else {
+      win.show();
+    }
+    protocolLogic(commandLine)
+  })
+
+  // define what to do if the app can start
+  app.on('ready', async () => {
+    createTray()
     createWindow()
-  }
-})
+    protocolLogic()
+  })
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-app.on('ready', async () => {
-  if (isDevelopment && !process.env.IS_TEST) {
-    // Install Vue Devtools
-    // Devtools extensions are broken in Electron 6.0.0 and greater
-    // See https://github.com/nklayman/vue-cli-plugin-electron-builder/issues/378 for more info
-    // Electron will not launch with Devtools extensions installed on Windows 10 with dark mode
-    // If you are not using Windows 10 dark mode, you may uncomment these lines
-    // In addition, if the linked issue is closed, you can upgrade electron and uncomment these lines
-     //try {
-     //  await installVueDevtools()
-     //} catch (e) {
-     //  console.error('Vue Devtools failed to install:', e.toString())
-     //}
 
-  }
-  createTray()
-  createWindow()
-})
+  // Quit when all windows are closed.
+  app.on('window-all-closed', (event) => {
+    // keeps Application allive after every window has closed
+    event.preventDefault()
+  })
+
+  app.on('activate', () => {
+    // On macOS it's common to re-create a window in the app when the
+    // dock icon is clicked and there are no other windows open.
+    if (win === null) {
+      createWindow()
+    }
+  })
+}
 
 // Exit cleanly on request from parent process in development mode.
 if (isDevelopment) {
@@ -126,96 +160,6 @@ if (isDevelopment) {
   }
 }
 
-const template = [
-  // { role: 'appMenu' }
-  ...(process.platform === 'darwin' ? [{
-    label: app.getName(),
-    submenu: [
-      { role: 'about' },
-      { type: 'separator' },
-      { role: 'services' },
-      { type: 'separator' },
-      { role: 'hide' },
-      { role: 'hideothers' },
-      { role: 'unhide' },
-      { type: 'separator' },
-      { role: 'quit' }
-    ]
-  }] : []),
-  // { role: 'editMenu' }
-  {
-    label: 'Edit',
-    submenu: [
-      { role: 'undo' },
-      { role: 'redo' },
-      { type: 'separator' },
-      { role: 'cut' },
-      { role: 'cut' },
-      { role: 'copy' },
-      { role: 'paste' },
-    ]
-  },
-  // { role: 'viewMenu' }
-  {
-    label: 'View',
-    submenu: [
-      { role: 'reload' },
-      { role: 'forcereload' },
-      { role: 'toggledevtools' },
-      { type: 'separator' },
-      { role: 'resetzoom' },
-      { role: 'zoomin' },
-      { role: 'zoomout' },
-      { type: 'separator' },
-      { role: 'togglefullscreen' },
-      { label: 'View',
-        submenu: [
-          { role: 'reload' },
-          { role: 'forcereload' },
-          { role: 'toggledevtools' },
-          { type: 'separator' },
-          { role: 'resetzoom' },
-          { role: 'zoomin' },
-          { role: 'zoomout' },
-          { type: 'separator' },
-          { label: 'View',
-        submenu: [
-          { role: 'reload' },
-          { role: 'forcereload' },
-          { role: 'toggledevtools' },
-          { type: 'separator' },
-          { role: 'resetzoom' },
-          { role: 'zoomin' },
-          { role: 'zoomout' },
-          { type: 'separator' },
-          { role: 'togglefullscreen' }
-        ]
-      }
-        ]
-      }
-    ]
-  },
-  // { role: 'windowMenu' }
-  {
-    label: 'Window',
-    submenu: [
-      { role: 'minimize' },
-      { role: 'zoom' },
-    ]
-  },
-  {
-    role: 'help',
-    submenu: [
-      {
-        label: 'Learn More',
-        click: async () => {
-          const { shell } = require('electron')
-          await shell.openExternal('https://electronjs.org')
-        }
-      }
-    ]
-  }
-]
+// Test zone
+// ---------------------------------------------------------------------------------------------------------------//
 
-const menu = Menu.buildFromTemplate(template)
-Menu.setApplicationMenu(menu)

@@ -1,8 +1,17 @@
 <template>
-  <b-dropdown :no-caret="!isSubMenu" :dropright="isSubMenu" size="sm" :class="classes" :text="menu.label">
+  <b-nav-item-dropdown v-if="nav" :no-caret="!SubMenu" :dropright="SubMenu" size="sm" :class="classes" :text="menu.label">
     <div v-for="( menuEntry, key ) in menu.submenu.items" :key="key">
       <div v-if="menuEntry.type === 'separator'" class="dropdown-divider"></div>
-      <MenuDropDown :SubMenu="true" v-on:MenuAction="callMenuAction" v-else-if="menuEntry.type === 'submenu'" :menu="menuEntry"></MenuDropDown>
+      <MenuDropDown SubMenu v-on:MenuAction="callMenuAction" v-else-if="menuEntry.type === 'submenu'" :menu="menuEntry"></MenuDropDown>
+      <b-dropdown-item v-else @click=" menuEntry.role ? callMenuAction(menuEntry.role) : menuEntry.click()">
+        {{ menuEntry.label }}
+      </b-dropdown-item>
+    </div>
+  </b-nav-item-dropdown>
+  <b-dropdown v-else :no-caret="!SubMenu" :dropright="SubMenu" size="sm" :class="classes" :text="menu.label">
+    <div v-for="( menuEntry, key ) in menu.submenu.items" :key="key">
+      <div v-if="menuEntry.type === 'separator'" class="dropdown-divider"></div>
+      <MenuDropDown SubMenu v-on:MenuAction="callMenuAction" v-else-if="menuEntry.type === 'submenu'" :menu="menuEntry"></MenuDropDown>
       <b-dropdown-item v-else @click=" menuEntry.role ? callMenuAction(menuEntry.role) : menuEntry.click()">
         {{ menuEntry.label }}
       </b-dropdown-item>
@@ -14,14 +23,15 @@
 
   export default {
     name: "MenuDropDown",
-    props: ['menu', 'SubMenu'],
-    computed: {
-      isSubMenu: function() {
-        return this.SubMenu ? true : false
+    props: {
+      menu: Object,
+      SubMenu: Boolean,
+      nav: Boolean
       },
+    computed: {
       classes: function() {
-        return this.isSubMenu ? 'dropdown-item sub-menu' : 'top-menu'
-      }
+        return this.SubMenu ? 'dropdown-item sub-menu' : 'top-menu'
+      },
     },
     methods: {
       callMenuAction: function(Action) {
@@ -35,43 +45,6 @@
   }
 </script>
 
-<style>
+<style scoped>
 
-.sub-menu:hover > ul.dropdown-menu {
-  display: block;
-} 	
-
-.sub-menu > ul.dropdown-menu:hover {
-  display: block;
-}
-
-.sub-menu > ul.dropdown-menu {
-  left: calc(100% - 2px);
-  top: calc(-0.5rem - 1px)
-}
-
-.top-menu {
-  color: #fff;
-  padding: 0.5rem;
-}
-
-.dropdown > button, 
-.dropdown > button:hover,
-.dropdown > button:active,
-.dropdown > button:focus,
-.dropdown.show > button {
-  border: none;
-  background: transparent!important;
-  color: inherit;
-  text-align: left;
-  padding: 0;
-  font: inherit;
-  box-shadow: none!important;
-}
-
-.dropdown > button::after {
-  position: absolute;
-  top: calc(50% - .3rem);
-  right: 0;
-}
 </style>

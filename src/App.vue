@@ -13,12 +13,20 @@
 <script>
     import TitleBar from "./components/TitleBar";
     import MainMenu from "./components/MainMenu";
-    import {remote} from "electron";
+    import {remote, ipcRenderer} from "electron";
+    import Settings from "./settings";
+
+    let settings = new Settings({
+      configName: 'registetProtocols',
+      defaults: {
+        protocolList: {}
+      }
+    });
 
     export default {
         data: function() {
           return {
-            app: remote.app
+            app: remote.app,
           }
         },
         components: {MainMenu, TitleBar},

@@ -1,11 +1,5 @@
 <template>
     <div class="applicationMenu">
-        <MenuDropDown
-        v-for="( menu, key ) in applicationMenu.items" 
-        :key="key" 
-        :menu="menu"
-        v-on:MenuAction="callMenuAction">
-        </MenuDropDown>
     </div>
 </template>
 
